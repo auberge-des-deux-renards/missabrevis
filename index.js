@@ -1,6 +1,6 @@
 import scrape from 'scrape-it-core';
 import fetch from 'node-fetch';
-import {setTimeout} from 'timers/promises';
+import { setTimeout } from 'timers/promises';
 import fs from 'fs/promises';
 
 const episodesQuery = {
@@ -22,9 +22,7 @@ const episodesQuery = {
 
               if (curr.children[0].name === 'td') {
                 episodes.push({
-                  number: parseInt(
-                      curr.children[0].children[0].data.slice(0, -1),
-                      10),
+                  number: parseInt(curr.children[0].children[0].data.slice(0, -1), 10),
                   title: curr.children[1].children[0].children[0].data,
                   link: curr.children[1].children[0].attribs.href,
                 });
@@ -75,20 +73,17 @@ if (!res.ok) {
   let count = 0;
   await Promise.all(data.seasons.map(season => season.episodes.map(episode => {
         // Random delay before each request to not overload the server all at once
-        return setTimeout(Math.random() * 60000, null).
-            then(async () => {
-              console.log(`${++count} : ${episode.link}`);
-              const res = await fetch(
-                  `https://www.missabrevis.com${episode.link}`);
-              if (res.ok) {
-                episode.script = scrape(await res.text(), scenesQuery);
-              } else {
-                throw new Error(
-                    `Request dropped : ${res.status} ${res.statusText} ${res.url}`);
-              }
-            });
+        return (async () => {
+          await setTimeout(Math.random() * 60000);
+          console.log(`${++count} : ${episode.link}`);
+          const res = await fetch(`https://www.missabrevis.com${episode.link}`);
+          if (res.ok) {
+            episode.script = scrape(await res.text(), scenesQuery);
+          } else {
+            throw new Error(`Request dropped : ${res.status} ${res.statusText} ${res.url}`);
+          }
+        })();
       }),
   ).flat());
-
   await fs.writeFile('kaamelott.json', JSON.stringify(data));
 }
